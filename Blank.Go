@@ -40,15 +40,68 @@ func errorCheck(err error){
 		log.Fatal(err)
 	}
 }
-
+//NEW INPUT
+/*
+<table border="10" align="center" style="margin-top:20px">
+	<thead align="center">
+		<tr>
+			<th colspan="2">Create Movie</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>Title:</td>
+			<td><input type="text" id="title" name="title"></td>
+		</tr>
+		<tr>
+			<td>Runtime:</td>
+			<td><input type="text" id="time" name="time"></td>
+		</tr>
+		<tr>
+			<td>Date:</td>
+			<td><input type="text" id="date" name="date"></td>
+		</tr>
+		<tr>
+			<td colspan="2" align="right"><input type="submit"></td>
+		</tr>
+	</tbody>
+</table>
+*/
+//OLD INPUT
+/*
+<div>Title <input type="text" id="title" name="title"></div>
+<div>Runtime <input type="text" id="time" name="time"></div>
+<div>Release Date <input type="text" id="date" name="date"></div>
+<div><input type="submit"></div>
+*/
 func createMovie(w http.ResponseWriter, r *http.Request){
-	htmlForm := `<h1>Create Movie</h1>
-	<form action="/savemovie?" method="GET">
-		<div>Title <input type="text" id="title" name="title"</div>
-		<div>Runtime <input type="text" id="time" name="time"></div>
-		<div>Release Date <input type="text" id="date" name="date"></div>
-		<div><input type="submit"></div>
-	</form>`
+	htmlForm := `
+		<table border="10" align="left" style="margin-top:10px">
+			<form action="/savemovie?" method="GET">
+				<thead align="center">
+					<tr>
+						<th colspan="2">Create Movie</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>Title:</td>
+						<td><input type="text" id="title" name="title"></td>
+					</tr>
+					<tr>
+						<td>Runtime:</td>
+						<td><input type="text" id="time" name="time"></td>
+					</tr>
+					<tr>
+						<td>Date:</td>
+						<td><input type="text" id="date" name="date"></td>
+					</tr>
+					<tr>
+						<td colspan="2" align="right"><input type="submit"></td>
+					</tr>
+				</tbody>
+			</form>
+		</table>`
 	fmt.Fprintf(w, htmlForm)
 }
 
@@ -63,19 +116,9 @@ func saveMovie(w http.ResponseWriter, r *http.Request){
 	//defer closing file
 	defer fi.Close()
 
-	//just get some data in it please. - Works now
-	/*
-	if _, err := fi.Write([]byte("appended some data\n")); err != nil { //well "Access is denied." so 
-		fi.Close() // ignore error; Write error takes precedence
-		log.Fatal(err)
-	}
-	*/
-
-
 	//Format how to write the line
 	s := data["title"][0] + ";" + data["time"][0] + ";" + data["date"][0] + ";\n"
-	//Testing to see if I formated this right
-	//fmt.Fprintf(w, s) //This works
+
 	//Save that line to a file
 	fi.Write([]byte(s))
 	//Send them back to the create movie page
