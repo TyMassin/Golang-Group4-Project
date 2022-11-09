@@ -53,7 +53,7 @@ func createMovie(w http.ResponseWriter, r *http.Request){
 }
 
 func saveMovie(w http.ResponseWriter, r *http.Request){	
-	fmt.Fprintf(w, "Attempting to write movie\n")
+	//fmt.Fprintf(w, "Attempting to write movie\n")
 	//grab keys and values
 	data, err := url.ParseQuery(r.URL.RawQuery)
 	errorCheck(err)
@@ -79,6 +79,7 @@ func saveMovie(w http.ResponseWriter, r *http.Request){
 	//Save that line to a file
 	fi.Write([]byte(s))
 	//Send them back to the create movie page
+	//http://localhost:8000//createmovie
 	http.Redirect(w, r, "/createmovie", http.StatusSeeOther)
 }
 
