@@ -10,12 +10,14 @@ import (
 	"os"
 	"net/http"
 	"net/url"
+	// "io/ioutil"
+	"html/template"
 )
 
 //Struct is turning out to be more complicated than I thought it would be. Feel free to edit it.
 type movie struct {
 	Title string
-	Runtime int //time in minutes rounded up
+	Runtime string //time in minutes rounded up
 	ReleaseDate string //Just keep it simple and write the date
 }
 
@@ -24,7 +26,8 @@ func (m movie) String() string{
 	return fmt.Sprintf("%v", m.Title)
 }
 
-var db map[int]movie
+//var db map[int]movie
+var movies []movie
 
 func main() {
 	http.HandleFunc("/createmovie", createMovie)
@@ -53,7 +56,18 @@ func createMovie(w http.ResponseWriter, r *http.Request){
 }
 
 func saveMovie(w http.ResponseWriter, r *http.Request){	
-	fmt.Fprintf(w, "Attempting to write movie\n")
+	//buttons for user
+	htmlCreateMovieButton := `<h1>Movie Added!</h1>
+	<form action="/createmovie?" method="GET">
+		<div><input type="submit" value="Add Movie"></div>
+	</form>`
+
+	htmlGetMoviesButton := `<form action="/getmovies?" method="GET">
+		<div><input type="submit" value="Show My Movies"></div>
+	</form>`
+	fmt.Fprintf(w, htmlCreateMovieButton)
+	fmt.Fprintf(w, htmlGetMoviesButton)
+	//fmt.Fprintf(w, "Attempting to write movie\n")
 	//grab keys and values
 	data, err := url.ParseQuery(r.URL.RawQuery)
 	errorCheck(err)
@@ -73,17 +87,44 @@ func saveMovie(w http.ResponseWriter, r *http.Request){
 
 
 	//Format how to write the line
-	s := data["title"][0] + ";" + data["time"][0] + ";" + data["date"][0] + ";\n"
+	s := "Title:" + data["title"][0] + "Runtime:" + data["time"][0] + "Release Date:" + data["date"][0] + "\n"
+	p:=movie{Title: data["title"][0], Runtime: data["time"][0], ReleaseDate: data["date"][0]}
 	//Testing to see if I formated this right
 	//fmt.Fprintf(w, s) //This works
 	//Save that line to a file
 	fi.Write([]byte(s))
 	//Send them back to the create movie page
-	http.Redirect(w, r, "/createmovie", http.StatusSeeOther)
+	//http.Redirect(w, r, "/createmovie", http.StatusSeeOther)
+	t, err := template.ParseFiles("movies_template.html")
+	fmt.Println(t.Execute(w, p))
 }
 
 
-func getMovies(w http.ResponseWriter, r *http.Request){
+func getMovies(w http.ResponseWriter, r *http.Request) {
+	
+	//reading and printing file
+	fi, err := os.OpenFile("db.txt", os.O_RDWR|os.O_APPEND, 0660)
+	errorCheck(err)
+	defer fi.Close()
+
+	htmlShowingMovies := `<table>
+    <tr>
+        <th>Title</th>
+        <th>Runtime</th>
+        <th>Release Date</th>
+    </tr>
+
+</table>
+
+<style>
+    th {
+        padding-right: 1em;
+    }
+</style>`
+fmt.Fprintf(w, htmlShowingMovies)
+	//print only part of file
+
+	
 
 }
 
