@@ -40,40 +40,7 @@ func errorCheck(err error){
 		log.Fatal(err)
 	}
 }
-//NEW INPUT
-/*
-<table border="10" align="center" style="margin-top:20px">
-	<thead align="center">
-		<tr>
-			<th colspan="2">Create Movie</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td>Title:</td>
-			<td><input type="text" id="title" name="title"></td>
-		</tr>
-		<tr>
-			<td>Runtime:</td>
-			<td><input type="text" id="time" name="time"></td>
-		</tr>
-		<tr>
-			<td>Date:</td>
-			<td><input type="text" id="date" name="date"></td>
-		</tr>
-		<tr>
-			<td colspan="2" align="right"><input type="submit"></td>
-		</tr>
-	</tbody>
-</table>
-*/
-//OLD INPUT
-/*
-<div>Title <input type="text" id="title" name="title"></div>
-<div>Runtime <input type="text" id="time" name="time"></div>
-<div>Release Date <input type="text" id="date" name="date"></div>
-<div><input type="submit"></div>
-*/
+
 func createMovie(w http.ResponseWriter, r *http.Request){
 	htmlForm := `
 		<table border="10" align="left" style="margin-top:10px">
