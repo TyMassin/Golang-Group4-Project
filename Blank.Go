@@ -69,6 +69,7 @@ func main() {
 	http.HandleFunc("/getmovies", getMovies)
 	http.HandleFunc("/updatemovie/", updateMovie)
 	http.HandleFunc("/deletemovie/", deleteMovie)
+	http.HandleFunc("/updatesave/", updateSave)
 	http.HandleFunc("/deletemovieConfirm", deletemovieConfirm)
 
 	log.Fatal(http.ListenAndServe(":8000", nil))
@@ -119,6 +120,7 @@ func saveMovie(w http.ResponseWriter, r *http.Request){
 	//grab keys and values
 	data, err := url.ParseQuery(r.URL.RawQuery)
 	errorCheck(err)
+
 	//open file
 	fi, err := os.OpenFile("db.txt", os.O_RDWR|os.O_APPEND, 0660)
 	errorCheck(err)
@@ -184,6 +186,8 @@ func getMovies(w http.ResponseWriter, r *http.Request) {
 	</table>`
 
 	/////////////Now to print/////////////////
+
+
 	//Head
 	fmt.Fprintf(w, htmlShowingMoviesHead)
 	//Body
@@ -203,12 +207,89 @@ func getMovies(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateMovie(w http.ResponseWriter, r *http.Request){
+	//grab keys and values
+	data, err := url.Parse(r.URL.Path)
+	errorCheck(err)
+	
+	//ok this extracts the id into mystring
+	var mystring = string(data.Path)
+	_, mystring, _ = strings.Cut(mystring, "/updatemovie/")
+	justgo, err := strconv.Atoi(mystring)
+	errorCheck(err)
 
+	htmlForm := `
+		<table border="10" align="left" style="margin-top:10px">
+			<form action="/savemovie?" method="GET">
+				<thead align="center">
+					<tr>
+						<th colspan="2">Update Movie</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>ID:</td>
+						<td><input type="text" id="id" name="id" value="%v" readonly></td>
+					</tr>
+					<tr>
+						<td>Title:</td>
+						<td><input type="text" id="title" name="title" value="%v"></td>
+					</tr>
+					<tr>
+						<td>Runtime:</td>
+						<td><input type="text" id="time" name="time" value="%v"></td>
+					</tr>
+					<tr>
+						<td>Date:</td>
+						<td><input type="date" id="date" name="date" value="%v"></td>
+					</tr>
+					<tr>
+						<td colspan="2" align="right" border-style="none"><input type="submit" formaction="/updatesave" value="Update Movie"></td>
+					</tr>
+					<tr>
+						<td colspan="2" align="right"><input type="submit" formaction="/getmovies" value="Show My Movies"></td>
+					</tr>
+				</tbody>
+			</form>
+		</table>`
+	fmt.Fprintf(w, htmlForm, justgo, db[justgo].Title, db[justgo].Runtime, db[justgo].ReleaseDate)
 }
 
+func updateSave(w http.ResponseWriter, r *http.Request) {
+//grab keys and values
+data, err := url.ParseQuery(r.URL.RawQuery)
+errorCheck(err)
+
+//format the new movie then replace the old one
+p := movie{data["title"][0],data["time"][0],data["date"][0]}
+justgo, err := strconv.Atoi(data["id"][0])
+errorCheck(err)
+db[justgo] = p
+
+//Send them back
+//http://localhost:8000//getmovies
+http.Redirect(w, r, "/getmovies", http.StatusSeeOther)
+}
+
+
 func deleteMovie(w http.ResponseWriter, r *http.Request){
+	//grab keys and values
+	data, err := url.Parse(r.URL.Path)
+	errorCheck(err)
 	
-	fmt.Fprintf(w, 
+	//ok this extracts the id into mystring
+	var mystring = string(data.Path)
+	_, mystring, _ = strings.Cut(mystring, "/deletemovie/")
+	justgo, err := strconv.Atoi(mystring)
+	errorCheck(err)
+
+
+	delete(db, justgo)
+
+
+	http.Redirect(w, r, "/getmovies", http.StatusSeeOther)
+
+
+	/* fmt.Fprintf(w, 
 		`<p>Type id# in URL to confirm deletion:</p>
 		<form action="/savemovie?" method="GET">
 		<p><input type="text" id="deleteID" name="deleteID" value=""</p>
@@ -216,7 +297,7 @@ func deleteMovie(w http.ResponseWriter, r *http.Request){
 		
 
 		</form>
-		`)
+		`) */
 }
 
 func deletemovieConfirm(w http.ResponseWriter, r *http.Request) {
