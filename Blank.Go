@@ -14,6 +14,9 @@ import (
 	"strings"
 	"strconv"
 	"io/ioutil"
+	"sync"
+	"time"
+	"math/rand"
 	//"html/template"
 )
 
@@ -32,8 +35,12 @@ func (m movie) String() string{
 //Globals
 var db map[int]movie = make(map[int]movie) //Our database
 var id int //used in helping create and manage the db keys
+var WriteGate sync.Mutex//Concurrency yay
 
-func main() {
+func main() {	
+	//localhost:8000/getmovies
+
+	///READ THE DATABASE
 	//Open the file
 	fi, err := os.OpenFile("db.txt", os.O_RDWR|os.O_APPEND, 0660)
 	errorCheck(err)
@@ -53,16 +60,23 @@ func main() {
 		id++
 	}
 
+	///HANDLERS
 	//MUX Handlers probably wont use but here it is
-	/*
+	//mux.Handle("", http.HandlerFunc())
 	mux := http.NewServeMux()
 	mux.Handle("/createmovie", http.HandlerFunc(createMovie))
 	mux.Handle("/savemovie", http.HandlerFunc(saveMovie))
 	mux.Handle("/getmovies", http.HandlerFunc(getMovies))
-	mux.Handle("/updatemovie", http.HandlerFunc(updateMovie))
-	mux.Handle("/deletemovie", http.HandlerFunc(deleteMovie))
+	mux.Handle("/updatemovie/", http.HandlerFunc(updateMovie))
+	mux.Handle("/deletemovie/", http.HandlerFunc(deleteMovie))
+	mux.Handle("/updatesave/", http.HandlerFunc(updateSave))
+	mux.Handle("/deletemovieConfirm", http.HandlerFunc(deletemovieConfirm))
+	mux.Handle("/overwritedb", http.HandlerFunc(overwritedb))
+	mux.Handle("/blasttest", http.HandlerFunc(blasttesting))
+
 	log.Fatal(http.ListenAndServe(":8000", mux))
-	*/
+
+	/*
 	//Handlers
 	http.HandleFunc("/createmovie", createMovie)
 	http.HandleFunc("/savemovie", saveMovie)
@@ -71,14 +85,43 @@ func main() {
 	http.HandleFunc("/deletemovie/", deleteMovie)
 	http.HandleFunc("/updatesave/", updateSave)
 	http.HandleFunc("/deletemovieConfirm", deletemovieConfirm)
+	http.HandleFunc("/overwritedb", overwritedb)
 
 	log.Fatal(http.ListenAndServe(":8000", nil))
+	*/
 }
 
 func errorCheck(err error){
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+
+//Funny concurrent processing function go brr
+func blasttesting(w http.ResponseWriter, r *http.Request){
+	rand.Seed(time.Now().UnixNano())
+	//print a funny thing
+	var wg sync.WaitGroup
+	var myfunc = func(wg *sync.WaitGroup){
+		rt := (rand.Uint32() % (179))+1
+		title := "Blast Test!"
+		date := time.Now()
+		mystring := "http://localhost:8000/savemovie?title="+ title +"&time=" + string(rt) + "&date=" + date.String()
+		
+		http.Post(mystring, "", )
+
+		fmt.Printf("Movie Added!")
+		//add a randomly designed movie to the db through savemovie
+		wg.Done()
+	}
+	for from := 0; from < 10; from++ {
+		wg.Add(1)
+		go myfunc(&wg)
+	}
+	wg.Wait()
+
+	http.Redirect(w, r, "/getmovies", http.StatusSeeOther)
 }
 
 func createMovie(w http.ResponseWriter, r *http.Request){
@@ -117,6 +160,9 @@ func createMovie(w http.ResponseWriter, r *http.Request){
 }
 
 func saveMovie(w http.ResponseWriter, r *http.Request){	
+	//Concurrency
+	WriteGate.Lock()
+	defer WriteGate.Unlock()
 	//grab keys and values
 	data, err := url.ParseQuery(r.URL.RawQuery)
 	errorCheck(err)
@@ -132,16 +178,36 @@ func saveMovie(w http.ResponseWriter, r *http.Request){
 	db[id] = p
 	id++
 
+	/*
 	//Format how to write the line
 	s := data["title"][0] + ";" + data["time"][0] + ";" + data["date"][0] + ";\n"
 	//Save that line to a file
 	fi.Write([]byte(s))
+	*/
 
 	//Send them back to the create movie page
 	//http://localhost:8000//createmovie
 	http.Redirect(w, r, "/createmovie", http.StatusSeeOther)
 }
 
+func overwritedb(w http.ResponseWriter, r *http.Request){
+	//open file
+	fi, err := os.OpenFile("db.txt", os.O_RDWR|os.O_APPEND, 0660)
+	errorCheck(err)
+	//defer closing file
+	defer fi.Close()
+
+	err = os.Truncate("C:\\Users\\overl\\Desktop\\GoPrograms\\groupp\\Golang-Group4-Project\\db.txt", 0)
+	errorCheck(err)
+	for _, v := range db{
+		s := v.Title + ";" + v.Runtime + ";" + v.ReleaseDate + ";\n"
+		//Save that line to a file
+		fi.Write([]byte(s))
+	}
+
+	//Send them back
+	http.Redirect(w, r, "/getmovies", http.StatusSeeOther)
+}
 
 func getMovies(w http.ResponseWriter, r *http.Request) {
 	
@@ -158,6 +224,8 @@ func getMovies(w http.ResponseWriter, r *http.Request) {
 				</tr>
 				<tr>
 					<th align="right"><input type="submit" formaction="/createmovie" value="Create Movie">
+					</th>
+					<th align="right"><input type="submit" formaction="/overwritedb" value="Overwrite DB">
 					</th>
 				</tr>
 				<tr>
@@ -255,23 +323,29 @@ func updateMovie(w http.ResponseWriter, r *http.Request){
 }
 
 func updateSave(w http.ResponseWriter, r *http.Request) {
-//grab keys and values
-data, err := url.ParseQuery(r.URL.RawQuery)
-errorCheck(err)
+	//Concurrency
+	WriteGate.Lock()
+	defer WriteGate.Unlock()
+	//grab keys and values
+	data, err := url.ParseQuery(r.URL.RawQuery)
+	errorCheck(err)
 
-//format the new movie then replace the old one
-p := movie{data["title"][0],data["time"][0],data["date"][0]}
-justgo, err := strconv.Atoi(data["id"][0])
-errorCheck(err)
-db[justgo] = p
+	//format the new movie then replace the old one
+	p := movie{data["title"][0],data["time"][0],data["date"][0]}
+	justgo, err := strconv.Atoi(data["id"][0])
+	errorCheck(err)
+	db[justgo] = p
 
-//Send them back
-//http://localhost:8000//getmovies
-http.Redirect(w, r, "/getmovies", http.StatusSeeOther)
+	//Send them back
+	//http://localhost:8000//getmovies
+	http.Redirect(w, r, "/getmovies", http.StatusSeeOther)
 }
 
 
 func deleteMovie(w http.ResponseWriter, r *http.Request){
+	//Concurrency
+	WriteGate.Lock()
+	defer WriteGate.Unlock()
 	//grab keys and values
 	data, err := url.Parse(r.URL.Path)
 	errorCheck(err)
