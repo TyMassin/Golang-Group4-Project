@@ -1,7 +1,7 @@
 // Class: C490
 // Name: Group 4
 // Assignment: Project
-// Date: 11/16/22
+// Date: 11/16/22-12/5/22
 package main
 
 import (
@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"io/ioutil"
 	"sync"
+	"sort"
 	"time"
 	"math/rand"
 	"html/template"
@@ -234,8 +235,12 @@ func getMovies(w http.ResponseWriter, r *http.Request) {
 	//Head
 	fmt.Fprintf(w, htmlShowingMoviesHead)
 	//Body
-	//This prints them out mostly randomly. we could do different handlers to sort this differently if we need more.
-	for i, v := range db {
+	keys := make([]int, 0)
+	for i, _ := range db {
+		keys = append (keys, i)
+	}
+	sort.Ints(keys)
+	for _, v := range keys {
 		fmt.Fprintf(w, `<tr class="movie-entries">
 		<td>%v</td>
 		<td>%v</td>
@@ -243,7 +248,7 @@ func getMovies(w http.ResponseWriter, r *http.Request) {
 		<td>%v</td>
 		<td><input class="update-delete-btns" type="submit" formaction="/updatemovie/%v" value="Edit"></td>
 		<td><input class="update-delete-btns" type="submit" formaction="/deletemovie/%v" value="Delete"></td>
-	</tr>`, i, v.Title, v.Runtime, v.ReleaseDate, i, i)
+	</tr>`, v, db[v].Title, db[v].Runtime, db[v].ReleaseDate, v, v)
 	}
 	// Foot
 	fmt.Fprintf(w, htmlShowingMoviesFoot)

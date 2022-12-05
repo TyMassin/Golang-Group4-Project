@@ -1,0 +1,6 @@
+The Incredibles;115;2004-10-24;
+Finding Nemo;100;2003-05-30;
+WALL-E;97;2008-06-27;
+Ratatouille;111;2007-07-29;
+Up;96;2009-06-29;
+Inside Out;95;2015-07-19;
