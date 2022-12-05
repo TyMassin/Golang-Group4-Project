@@ -1,0 +1,131 @@
+/* CREATE PAGE */
+* {
+    margin: auto;
+    box-sizing: border-box;
+    font-family: roboto, sans-serif;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 25px;
+}
+
+body {
+    height: 100%;
+    background: #63D471;
+    background: radial-gradient(#63D471 0%, #4b4646 100%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+}
+
+h1 {
+    margin-top: 50px;
+    font-family: forma-djr-banner, sans-serif;;
+    font-weight: 400;
+    font-style: italic;
+    font-size: 80px;
+    color: whitesmoke;
+    text-align: center;
+    text-shadow: 1px 5px black;
+}
+
+table {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: max-content;
+    margin-top: 5%;
+    background-color: rgb(36, 33, 33);
+    padding: 60px;
+    border-spacing: 0;
+    border-radius: 30px;
+}
+
+input {
+    border-style: hidden;
+    border-bottom-style: groove;
+    padding: 5px;
+    margin-bottom: 30px;
+    background-color: darkslategray;
+    color: white;
+}
+
+::placeholder {
+    color: white;
+}
+
+.header {
+    font-size: larger;
+    column-span: 2;
+    padding-bottom: 50px;
+    color: #63D471;
+    width: max-content;
+
+}
+
+.td-center-btn {
+    text-align: center;
+}
+
+.btn {
+    margin-top: 40px;
+    padding: 10px;
+    border-style: groove;
+    border-radius: 2px;
+    border-color: #63D471;
+    color: #63D471;
+    background-color: rgb(36, 33, 33);
+}
+
+.btn:hover {
+    color: rgb(36, 33, 33);
+    background-color: #63D471;
+}
+
+#show-movies {
+    margin-top: -30px;
+}
+
+/* GET MOVIES */
+.get-movies-table {
+    display: block;
+}
+
+.movie-entries {
+    color: white;
+    text-align: left;
+    background-color: darkslategray;
+}
+
+.movie-entries>td {
+    color: black;
+    text-align: left;
+    padding-right: 50px;
+}
+
+.table-colors>tr:nth-child(odd) {
+    background-color: rgb(60, 139, 139);
+}
+
+.table-colors>tr:nth-child(even) {
+    background-color: rgb(101, 74, 131);
+}
+
+.update-delete-btns {
+    padding: 10px;
+    color: black;
+    background-color:#63D471;
+    border-style: groove;
+    margin-bottom: 5px;
+    margin-top: 5px;
+}
+
+.update-delete-btns:hover {
+    color:#63D471;
+    background-color: rgb(36, 33, 33);
+    
+}
+#get-movies-header {
+    font-size: 50px;
+    text-decoration:underline;
+}
