@@ -15,9 +15,9 @@ import (
 	"strconv"
 	"io/ioutil"
 	"sync"
-	"time"
-	"math/rand"
-	//"html/template"
+	// "time"
+	// "math/rand"
+	"html/template"
 )
 
 //Struct is turning out to be more complicated than I thought it would be. Feel free to edit it.
@@ -36,6 +36,11 @@ func (m movie) String() string{
 var db map[int]movie = make(map[int]movie) //Our database
 var id int //used in helping create and manage the db keys
 var WriteGate sync.Mutex//Concurrency yay
+
+var tmpl *template.Template
+func init() {
+	tmpl=template.Must(template.ParseGlob("*.html"))
+}
 
 func main() {	
 	//localhost:8000/getmovies
@@ -63,7 +68,11 @@ func main() {
 	///HANDLERS
 	//MUX Handlers probably wont use but here it is
 	//mux.Handle("", http.HandlerFunc())
+
+	
+
 	mux := http.NewServeMux()
+
 	mux.Handle("/createmovie", http.HandlerFunc(createMovie))
 	mux.Handle("/savemovie", http.HandlerFunc(saveMovie))
 	mux.Handle("/getmovies", http.HandlerFunc(getMovies))
@@ -72,7 +81,10 @@ func main() {
 	mux.Handle("/updatesave/", http.HandlerFunc(updateSave))
 	mux.Handle("/deletemovieConfirm", http.HandlerFunc(deletemovieConfirm))
 	mux.Handle("/overwritedb", http.HandlerFunc(overwritedb))
-	mux.Handle("/blasttest", http.HandlerFunc(blasttesting))
+	//mux.Handle("/blasttest", http.HandlerFunc(blasttesting))
+
+	cssHandler:=http.FileServer(http.Dir("css"))
+	mux.Handle("/css/", http.StripPrefix("/css/", cssHandler))
 
 	log.Fatal(http.ListenAndServe(":8000", mux))
 
@@ -86,7 +98,6 @@ func main() {
 	http.HandleFunc("/updatesave/", updateSave)
 	http.HandleFunc("/deletemovieConfirm", deletemovieConfirm)
 	http.HandleFunc("/overwritedb", overwritedb)
-
 	log.Fatal(http.ListenAndServe(":8000", nil))
 	*/
 }
@@ -99,64 +110,33 @@ func errorCheck(err error){
 
 
 //Funny concurrent processing function go brr
-func blasttesting(w http.ResponseWriter, r *http.Request){
-	rand.Seed(time.Now().UnixNano())
-	//print a funny thing
-	var wg sync.WaitGroup
-	var myfunc = func(wg *sync.WaitGroup){
-		rt := (rand.Uint32() % (179))+1
-		title := "Blast Test!"
-		date := time.Now()
-		mystring := "http://localhost:8000/savemovie?title="+ title +"&time=" + string(rt) + "&date=" + date.String()
+// func blasttesting(w http.ResponseWriter, r *http.Request){
+// 	rand.Seed(time.Now().UnixNano())
+// 	//print a funny thing
+// 	var wg sync.WaitGroup
+// 	var myfunc = func(wg *sync.WaitGroup){
+// 		rt := (rand.Uint32() % (179))+1
+// 		title := "Blast Test!"
+// 		date := time.Now()
+// 		mystring := "http://localhost:8000/savemovie?title="+ title +"&time=" + string(rt) + "&date=" + date.String()
 		
-		http.Post(mystring, "", )
+// 		http.Post(mystring, "", )
 
-		fmt.Printf("Movie Added!")
-		//add a randomly designed movie to the db through savemovie
-		wg.Done()
-	}
-	for from := 0; from < 10; from++ {
-		wg.Add(1)
-		go myfunc(&wg)
-	}
-	wg.Wait()
+// 		fmt.Printf("Movie Added!")
+// 		//add a randomly designed movie to the db through savemovie
+// 		wg.Done()
+// 	}
+// 	for from := 0; from < 10; from++ {
+// 		wg.Add(1)
+// 		go myfunc(&wg)
+// 	}
+// 	wg.Wait()
 
-	http.Redirect(w, r, "/getmovies", http.StatusSeeOther)
-}
+// 	http.Redirect(w, r, "/getmovies", http.StatusSeeOther)
+// }
 
 func createMovie(w http.ResponseWriter, r *http.Request){
-	htmlForm := `
-		<table border="10" align="left" style="margin-top:10px">
-			<form action="/savemovie?" method="GET">
-				<thead align="center">
-					<tr>
-						<th colspan="2">Create Movie</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td>Title:</td>
-						<td><input type="text" id="title" name="title"></td>
-					</tr>
-					<tr>
-						<td>Runtime:</td>
-						<td><input type="text" id="time" name="time"></td>
-					</tr>
-					<tr>
-						<td>Date:</td>
-						<td><input type="date" id="date" name="date"></td>
-					</tr>
-					<tr>
-						<td colspan="2" align="right" border-style="none"><input type="submit" formaction="/savemovie" value="Add Movie"></td>
-					</tr>
-					<tr>
-						<td colspan="2" align="right"><input type="submit" formaction="/getmovies" value="Show My Movies"></td>
-					</tr>
-				</tbody>
-			</form>
-		</table>`
-	fmt.Fprintf(w, htmlForm)
-
+	tmpl.ExecuteTemplate(w, "create_movie.html", db)
 }
 
 func saveMovie(w http.ResponseWriter, r *http.Request){	
@@ -216,42 +196,42 @@ func getMovies(w http.ResponseWriter, r *http.Request) {
 	errorCheck(err)
 	defer fi.Close()
 
-	htmlShowingMoviesHead := `<table border="10" align="left" style="margin-top:10px">
-		<form action="/savemovie?" method="GET">
-			<thead align="center">
-				<tr>
-					<th colspan="8">Movie List</th>
-				</tr>
-				<tr>
-					<th align="right"><input type="submit" formaction="/createmovie" value="Create Movie">
-					</th>
-					<th align="right"><input type="submit" formaction="/overwritedb" value="Overwrite DB">
-					</th>
-				</tr>
-				<tr>
-					<th>ID</th>
-					<th>Title</th>
-					<th>Runtime</th>
-					<th>Release Date</th>
-				</tr>
-			</thead>
-			<tbody>`
+	htmlShowingMoviesHead := `<!DOCTYPE html>
+<html lang="en">
 
-
-	//How the body is formatted (Each line from the db should be printed in this way)
-	/*
-	<tr>
-		<td></td>
-		<td></td>
-		<td></td>
-		<td></td>
-	</tr>
-	*/
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" href="https://use.typekit.net/kgs0swm.css">
+</head>
+<body>
+    <h1>My Movie Database!</h1>
+    <table class="get-movies-table">
+        <form action="/savemovie?" method="GET">
+            <thead>
+                <tr>
+                    <th class="header" id="get-movies-header" colspan="8">My Movies</th>
+                </tr>
+                <tr>
+                    <th><input class="btn" type="submit" formaction="/createmovie" value="Add Another Movie">
+                    </th>
+                    <th><input class="btn" type="submit" formaction="/overwritedb" value="Overwrite DB">
+                    </th>
+                </tr>
+                <tr class="movie-entries">
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Runtime</th>
+                    <th>Release Date</th>
+                </tr>
+            </thead>
+            <tbody class="table-colors">`
 	
 	htmlShowingMoviesFoot := `
-			</tbody>
-		</form>
-	</table>`
+	</tbody>
+	</form>
+</table>
+</body>`
 
 	/////////////Now to print/////////////////
 
@@ -261,16 +241,16 @@ func getMovies(w http.ResponseWriter, r *http.Request) {
 	//Body
 	//This prints them out mostly randomly. we could do different handlers to sort this differently if we need more.
 	for i, v := range db {
-		fmt.Fprintf(w, `<tr>
+		fmt.Fprintf(w, `<tr class="movie-entries">
 		<td>%v</td>
 		<td>%v</td>
 		<td>%v</td>
 		<td>%v</td>
-		<td align="right"><input type="submit" formaction="/updatemovie/%v" value="Edit"></td>
-		<td align="right"><input type="submit" id="delete" formaction="/deletemovie/%v" value="Delete"></td>
-		</tr>`, i, v.Title, v.Runtime, v.ReleaseDate, i, i)
+		<td><input class="update-delete-btns" type="submit" formaction="/updatemovie/%v" value="Edit"></td>
+		<td><input class="update-delete-btns" type="submit" formaction="/deletemovie/%v" value="Delete"></td>
+	</tr>`, i, v.Title, v.Runtime, v.ReleaseDate, i, i)
 	}
-	//Foot
+	// Foot
 	fmt.Fprintf(w, htmlShowingMoviesFoot)
 }
 
@@ -285,40 +265,56 @@ func updateMovie(w http.ResponseWriter, r *http.Request){
 	justgo, err := strconv.Atoi(mystring)
 	errorCheck(err)
 
-	htmlForm := `
-		<table border="10" align="left" style="margin-top:10px">
+	htmlForm := `<!DOCTYPE html>
+	<html lang="en">
+	
+	<head>
+		<meta charset="UTF-8">
+		
+		<link rel="stylesheet" href="https://use.typekit.net/kgs0swm.css">
+	</head>
+	<body>
+	
+		<h1>My Movie Database!</h1>
+		<table>
 			<form action="/savemovie?" method="GET">
-				<thead align="center">
+				<thead>
 					<tr>
-						<th colspan="2">Update Movie</th>
+						<th class="header">Edit Movie</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr>
-						<td>ID:</td>
-						<td><input type="text" id="id" name="id" value="%v" readonly></td>
+						<td>
+							<input type="text" id="id" name="id" value="%v" readonly>
+						</td>
 					</tr>
 					<tr>
-						<td>Title:</td>
-						<td><input type="text" id="title" name="title" value="%v"></td>
+						<td>
+							<input type="text" placeholder="Title" name="title" value="%v">
+						</td>
 					</tr>
 					<tr>
-						<td>Runtime:</td>
-						<td><input type="text" id="time" name="time" value="%v"></td>
+						<td>
+							<input type="text" name="time" value="%v">
+						</td>
+						</div>
+					<tr>
+						<td>
+							<input type="text" onfocus="(this.type='date')" id="date" name="date" value="%v">
+						</td>
+					<tr>
+						<td class="td-center-btn"><input class="btn" type="submit" formaction="/updatesave"
+								value="Update Movie"></td>
 					</tr>
 					<tr>
-						<td>Date:</td>
-						<td><input type="date" id="date" name="date" value="%v"></td>
-					</tr>
-					<tr>
-						<td colspan="2" align="right" border-style="none"><input type="submit" formaction="/updatesave" value="Update Movie"></td>
-					</tr>
-					<tr>
-						<td colspan="2" align="right"><input type="submit" formaction="/getmovies" value="Show My Movies"></td>
+						<td class="td-center-btn"><input class="btn" id="show-movies" type="submit" formaction="/getmovies"
+								value="Show My Movies"></td>
 					</tr>
 				</tbody>
 			</form>
-		</table>`
+		</table>
+	</body>`
 	fmt.Fprintf(w, htmlForm, justgo, db[justgo].Title, db[justgo].Runtime, db[justgo].ReleaseDate)
 }
 
@@ -369,7 +365,6 @@ func deleteMovie(w http.ResponseWriter, r *http.Request){
 		<p><input type="text" id="deleteID" name="deleteID" value=""</p>
 		<p><input type="submit" id="deleteID" formaction="/deletemovieConfirm" value="Submit"</p>
 		
-
 		</form>
 		`) */
 }

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" href="https://use.typekit.net/kgs0swm.css">
+</head>
+
+<body>
+    <h1>My Movie Database!</h1>
+    <table>
+        <form class="form" action="/savemovie" method="GET">
+            <thead>
+                <tr>
+                    <th class="header">What Movies Have You Watched?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <input type="text" placeholder="Title" id="title" name="title">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="text" placeholder="Runtime" id="time" name="time">
+                    </td>
+                </div>
+                <tr>
+                    <td>
+                        <input type="text" placeholder="Release Date"onfocus="(this.type='date')" id="date" name="date">
+                    </td>
+                </tr>
+                <tr>
+                    <td class="td-center-btn"><input class="btn" type="submit" formaction="/savemovie" value="Add Movie"></td>
+                </tr>
+                <tr>
+                    <td class="td-center-btn"><input class="btn" id="show-movies" type="submit" formaction="/getmovies" value="Show My Movies"></td>
+                </tr>
+            </tbody>
+        </form>
+    </table>
+</body>
