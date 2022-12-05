@@ -103,19 +103,24 @@ func blasttesting(w http.ResponseWriter, r *http.Request){
 	rand.Seed(time.Now().UnixNano())
 	//print a funny thing
 	var wg sync.WaitGroup
+	var coutnter = int64(1)
 	var myfunc = func(wg *sync.WaitGroup){
-		rt := (rand.Uint32() % (179))+1
-		title := "Blast Test!"
-		date := time.Now()
-		mystring := "http://localhost:8000/savemovie?title="+ title +"&time=" + string(rt) + "&date=" + date.String()
-		
-		http.Post(mystring, "", )
+		rt := int64(rand.Uint32()%480)
+		title := "BlastTest!:" + strconv.FormatInt(coutnter,10)
+		coutnter++
+		date := "A release date"
+		mystring := "http://localhost:8000/savemovie?title="+ title +"&time=" + strconv.FormatInt(rt,10) + "&date=" + date
+		//anewstring := "http://localhost:8000/savemovie?title=ctest&time=333&date=test"
 
-		fmt.Printf("Movie Added!")
+		fmt.Printf("Link:%v\n", mystring)
+		//http.NewRequest("POST", mystring, nil)
+		http.Get(mystring)
+
+		fmt.Printf("Movie Added!\n")
 		//add a randomly designed movie to the db through savemovie
 		wg.Done()
 	}
-	for from := 0; from < 10; from++ {
+	for from := 0; from < 1000; from++ {
 		wg.Add(1)
 		go myfunc(&wg)
 	}
