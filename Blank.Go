@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"io/ioutil"
 	"sync"
-	// "time"
-	// "math/rand"
+	"time"
+	"math/rand"
 	"html/template"
 )
 
@@ -81,25 +81,14 @@ func main() {
 	mux.Handle("/updatesave/", http.HandlerFunc(updateSave))
 	mux.Handle("/deletemovieConfirm", http.HandlerFunc(deletemovieConfirm))
 	mux.Handle("/overwritedb", http.HandlerFunc(overwritedb))
-	//mux.Handle("/blasttest", http.HandlerFunc(blasttesting))
+	mux.Handle("/blasttest", http.HandlerFunc(blasttesting))
 
 	cssHandler:=http.FileServer(http.Dir("css"))
 	mux.Handle("/css/", http.StripPrefix("/css/", cssHandler))
 
 	log.Fatal(http.ListenAndServe(":8000", mux))
 
-	/*
-	//Handlers
-	http.HandleFunc("/createmovie", createMovie)
-	http.HandleFunc("/savemovie", saveMovie)
-	http.HandleFunc("/getmovies", getMovies)
-	http.HandleFunc("/updatemovie/", updateMovie)
-	http.HandleFunc("/deletemovie/", deleteMovie)
-	http.HandleFunc("/updatesave/", updateSave)
-	http.HandleFunc("/deletemovieConfirm", deletemovieConfirm)
-	http.HandleFunc("/overwritedb", overwritedb)
-	log.Fatal(http.ListenAndServe(":8000", nil))
-	*/
+	
 }
 
 func errorCheck(err error){
@@ -119,26 +108,26 @@ func blasttesting(w http.ResponseWriter, r *http.Request){
 		rt := int64(rand.Uint32()%480)
 		title := "BlastTest!:" + strconv.FormatInt(coutnter,10)
 		coutnter++
-		date := "A release date"
+		date := "2022-12-6"
 		mystring := "http://localhost:8000/savemovie?title="+ title +"&time=" + strconv.FormatInt(rt,10) + "&date=" + date
 		//anewstring := "http://localhost:8000/savemovie?title=ctest&time=333&date=test"
 
 		fmt.Printf("Link:%v\n", mystring)
-		//http.NewRequest("POST", mystring, nil)
+
 		http.Get(mystring)
 
 		fmt.Printf("Movie Added!\n")
-		//add a randomly designed movie to the db through savemovie
+
 		wg.Done()
 	}
-	for from := 0; from < 1000; from++ {
+	for from := 0; from < 10; from++ {
 		wg.Add(1)
 		go myfunc(&wg)
 	}
 	wg.Wait()
 
-// 	http.Redirect(w, r, "/getmovies", http.StatusSeeOther)
-// }
+ 	http.Redirect(w, r, "/getmovies", http.StatusSeeOther)
+}
 
 func createMovie(w http.ResponseWriter, r *http.Request){
 	tmpl.ExecuteTemplate(w, "create_movie.html", db)
@@ -201,6 +190,9 @@ func getMovies(w http.ResponseWriter, r *http.Request) {
 	errorCheck(err)
 	defer fi.Close()
 
+
+	//OK for some reason this href does not need a / which is potentially a massive security loophole we have stumbled upon and I have NO IDEA why it works.
+	//I am not correcting it and adding the / becaues the fact that it is an anomoly of security is baffling me
 	htmlShowingMoviesHead := `<!DOCTYPE html>
 <html lang="en">
 
@@ -238,9 +230,7 @@ func getMovies(w http.ResponseWriter, r *http.Request) {
 </table>
 </body>`
 
-	/////////////Now to print/////////////////
-
-
+	/////////////Now to print///////////
 	//Head
 	fmt.Fprintf(w, htmlShowingMoviesHead)
 	//Body
@@ -263,23 +253,25 @@ func updateMovie(w http.ResponseWriter, r *http.Request){
 	//grab keys and values
 	data, err := url.Parse(r.URL.Path)
 	errorCheck(err)
-	
 	//ok this extracts the id into mystring
 	var mystring = string(data.Path)
 	_, mystring, _ = strings.Cut(mystring, "/updatemovie/")
 	justgo, err := strconv.Atoi(mystring)
+	//fmt.Println(justgo)
+	//fmt.Println(err)
 	errorCheck(err)
 
+	///css/main.css
 	htmlForm := `<!DOCTYPE html>
 	<html lang="en">
-	
+
 	<head>
 		<meta charset="UTF-8">
-		
+		<link rel="stylesheet" type="text/css" href="/css/main.css">
 		<link rel="stylesheet" href="https://use.typekit.net/kgs0swm.css">
 	</head>
 	<body>
-	
+
 		<h1>My Movie Database!</h1>
 		<table>
 			<form action="/savemovie?" method="GET">
@@ -321,6 +313,8 @@ func updateMovie(w http.ResponseWriter, r *http.Request){
 		</table>
 	</body>`
 	fmt.Fprintf(w, htmlForm, justgo, db[justgo].Title, db[justgo].Runtime, db[justgo].ReleaseDate)
+	//fmt.Fprintf(w, htmlForm)
+	//fmt.Printf("Footer type:%T\n", htmlForm)
 }
 
 func updateSave(w http.ResponseWriter, r *http.Request) {
